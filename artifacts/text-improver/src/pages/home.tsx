@@ -87,13 +87,19 @@ export default function Home() {
     }
   }, [outputText, appState]);
 
+  // Close sidebar on Escape
+  useEffect(() => {
+    const handler = (e: KeyboardEvent) => {
+      if (e.key === "Escape" && sidebarOpen) setSidebarOpen(false);
+    };
+    window.addEventListener("keydown", handler);
+    return () => window.removeEventListener("keydown", handler);
+  }, [sidebarOpen]);
+
   const handleInputChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
     setInputText(e.target.value);
-    if (appState === "idle" && e.target.value.length > 0) {
-      setAppState("writing");
-    } else if (e.target.value.length === 0) {
-      setAppState("idle");
-    }
+    if (appState === "idle" && e.target.value.length > 0) setAppState("writing");
+    else if (e.target.value.length === 0) setAppState("idle");
   };
 
   const handleNewText = useCallback(() => {
@@ -102,7 +108,7 @@ export default function Home() {
     setErrorText("");
     setAppState("idle");
     setIsCopied(false);
-    setTimeout(() => textareaRef.current?.focus(), 50);
+    setTimeout(() => textareaRef.current?.focus(), 60);
   }, []);
 
   const handleProcess = async () => {
@@ -120,9 +126,7 @@ export default function Home() {
         body: JSON.stringify({ text: inputText, mode }),
       });
 
-      if (!response.ok) {
-        throw new Error("Error al conectar con el servidor");
-      }
+      if (!response.ok) throw new Error("Error al conectar con el servidor");
 
       setAppState("streaming");
 
@@ -146,9 +150,7 @@ export default function Home() {
                 finalResult += payload.content;
                 setOutputText(finalResult);
               }
-              if (payload.error) {
-                throw new Error("Error al procesar el texto con la IA");
-              }
+              if (payload.error) throw new Error("Error al procesar el texto con la IA");
             } catch (e) {
               if (e instanceof SyntaxError) continue;
               throw e;
@@ -165,9 +167,7 @@ export default function Home() {
       }
     } catch (error) {
       setErrorText(
-        error instanceof Error
-          ? error.message
-          : "Ocurrió un error inesperado. Inténtalo de nuevo."
+        error instanceof Error ? error.message : "Ocurrió un error inesperado."
       );
       setAppState("error");
     }
@@ -179,9 +179,7 @@ export default function Home() {
       await navigator.clipboard.writeText(outputText);
       setIsCopied(true);
       setTimeout(() => setIsCopied(false), 2500);
-    } catch {
-      // fallback
-    }
+    } catch {}
   };
 
   const loadHistoryEntry = (entry: HistoryEntry) => {
@@ -197,64 +195,80 @@ export default function Home() {
   const showOutput = isProcessing || isDone || isError;
 
   return (
-    <div className="flex h-screen w-full bg-background overflow-hidden font-sans">
-      {/* Mobile sidebar overlay */}
-      {sidebarOpen && (
-        <div
-          className="fixed inset-0 bg-black/50 z-20 md:hidden backdrop-blur-sm"
-          onClick={() => setSidebarOpen(false)}
-        />
-      )}
+    <div className="relative flex h-screen w-full bg-background overflow-hidden font-sans">
 
-      {/* Sidebar */}
+      {/* ── Sidebar drawer (overlay on all screen sizes) ── */}
+      {/* Backdrop */}
+      <div
+        aria-hidden="true"
+        onClick={() => setSidebarOpen(false)}
+        className={cn(
+          "fixed inset-0 z-40 bg-black/50 backdrop-blur-sm transition-opacity duration-300",
+          sidebarOpen ? "opacity-100 pointer-events-auto" : "opacity-0 pointer-events-none"
+        )}
+      />
+
+      {/* Drawer panel */}
       <aside
         className={cn(
-          "fixed md:relative inset-y-0 left-0 z-30 flex flex-col border-r border-border bg-card",
-          "w-72 transition-transform duration-300 ease-in-out md:flex-shrink-0",
-          sidebarOpen ? "translate-x-0" : "-translate-x-full md:translate-x-0"
+          "fixed inset-y-0 left-0 z-50 flex flex-col w-80 bg-card border-r border-border shadow-2xl",
+          "transition-transform duration-300 ease-in-out",
+          sidebarOpen ? "translate-x-0" : "-translate-x-full"
         )}
       >
-        <div className="h-14 border-b border-border flex items-center justify-between px-4 flex-shrink-0">
-          <div className="flex items-center gap-2 font-semibold text-sm text-foreground">
-            <History className="w-4 h-4 text-muted-foreground" />
-            Historial
+        {/* Sidebar header */}
+        <div className="flex items-center justify-between px-5 h-16 border-b border-border flex-shrink-0 bg-card">
+          <div className="flex items-center gap-2.5">
+            <div className="bg-primary/10 p-1.5 rounded-lg">
+              <History className="w-4 h-4 text-primary" />
+            </div>
+            <div>
+              <p className="text-sm font-semibold text-foreground">Historial</p>
+              <p className="text-[10px] text-muted-foreground">
+                {history.length === 0 ? "Sin entradas" : `${history.length} ${history.length === 1 ? "entrada" : "entradas"}`}
+              </p>
+            </div>
           </div>
-          <Button
-            variant="ghost"
-            size="icon"
-            className="h-7 w-7 rounded-full"
+          <button
             onClick={() => setSidebarOpen(false)}
+            aria-label="Cerrar historial"
+            className={cn(
+              "flex items-center justify-center w-8 h-8 rounded-full",
+              "bg-muted hover:bg-muted/80 text-muted-foreground hover:text-foreground",
+              "transition-all duration-150 active:scale-95"
+            )}
           >
-            <X className="w-3.5 h-3.5" />
-          </Button>
+            <X className="w-4 h-4" />
+          </button>
         </div>
 
+        {/* Sidebar body */}
         <div className="flex-1 overflow-y-auto p-3 space-y-1">
           {history.length === 0 ? (
-            <div className="flex flex-col items-center justify-center text-center py-14 px-4 text-muted-foreground">
-              <div className="bg-muted w-12 h-12 rounded-full flex items-center justify-center mb-3">
-                <Clock className="w-5 h-5 opacity-40" />
+            <div className="flex flex-col items-center justify-center text-center py-16 px-5 text-muted-foreground">
+              <div className="w-14 h-14 rounded-2xl bg-muted flex items-center justify-center mb-4">
+                <Clock className="w-6 h-6 opacity-35" />
               </div>
-              <p className="text-sm font-medium mb-1">Sin historial aún</p>
-              <p className="text-xs opacity-60 leading-relaxed">
-                Los textos que proceses<br />aparecerán aquí
+              <p className="text-sm font-semibold mb-1.5">Aún no hay textos</p>
+              <p className="text-xs opacity-60 leading-relaxed max-w-[180px]">
+                Los textos que proceses con la IA aparecerán aquí
               </p>
             </div>
           ) : (
             history.map((entry, i) => (
               <button
                 key={entry.id}
-                className={cn(
-                  "w-full text-left group relative p-3 rounded-xl border border-transparent",
-                  "hover:border-border hover:bg-muted/40 transition-all duration-150",
-                  "animate-in fade-in slide-in-from-left-3"
-                )}
-                style={{ animationDelay: `${i * 35}ms` }}
                 onClick={() => loadHistoryEntry(entry)}
                 data-testid={`card-history-${entry.id}`}
+                className={cn(
+                  "w-full text-left group relative p-3.5 rounded-xl border border-transparent",
+                  "hover:border-border hover:bg-muted/50 transition-all duration-150",
+                  "animate-in fade-in slide-in-from-left-2"
+                )}
+                style={{ animationDelay: `${i * 30}ms` }}
               >
-                <div className="flex items-center justify-between mb-1.5">
-                  <span className="text-[10px] uppercase tracking-widest font-semibold text-primary">
+                <div className="flex items-center justify-between mb-2">
+                  <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-semibold uppercase tracking-wider bg-primary/10 text-primary">
                     {MODE_LABELS[entry.mode]}
                   </span>
                   <span className="text-[10px] text-muted-foreground">
@@ -264,39 +278,48 @@ export default function Home() {
                     })}
                   </span>
                 </div>
-                <p className="text-xs text-foreground/75 line-clamp-2 leading-relaxed">
+                <p className="text-xs text-foreground/75 line-clamp-2 leading-relaxed pr-4">
                   {entry.inputText}
                 </p>
-                <ChevronRight className="absolute right-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity" />
+                <ChevronRight className="absolute right-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity" />
               </button>
             ))
           )}
         </div>
       </aside>
 
-      {/* Main */}
+      {/* ── Main content ── */}
       <div className="flex-1 flex flex-col min-w-0 h-full">
+
         {/* Header */}
-        <header className="h-14 border-b border-border flex items-center justify-between px-4 md:px-6 flex-shrink-0 bg-background/80 backdrop-blur-sm sticky top-0 z-10">
+        <header className="h-14 border-b border-border flex items-center justify-between px-4 md:px-6 flex-shrink-0 bg-background/90 backdrop-blur-md sticky top-0 z-10">
           <div className="flex items-center gap-3">
-            <Button
-              variant="ghost"
-              size="icon"
-              className="relative h-8 w-8 rounded-full text-muted-foreground hover:text-foreground"
-              onClick={() => setSidebarOpen(true)}
-              title="Ver historial"
+
+            {/* History toggle button */}
+            <button
+              onClick={() => setSidebarOpen((v) => !v)}
+              aria-label="Ver historial"
+              className={cn(
+                "relative flex items-center justify-center w-9 h-9 rounded-xl border transition-all duration-150",
+                "hover:bg-muted active:scale-95",
+                sidebarOpen
+                  ? "bg-primary/10 border-primary/30 text-primary"
+                  : "bg-transparent border-border text-muted-foreground hover:text-foreground"
+              )}
             >
               <History className="w-4 h-4" />
-              {history.length > 0 && (
-                <span className="absolute top-1.5 right-1.5 w-1.5 h-1.5 rounded-full bg-primary" />
+              {history.length > 0 && !sidebarOpen && (
+                <span className="absolute -top-1 -right-1 w-2 h-2 rounded-full bg-primary border-2 border-background" />
               )}
-            </Button>
+            </button>
+
+            {/* Logo */}
             <div className="flex items-center gap-2.5">
-              <div className="bg-primary/15 p-1.5 rounded-lg">
+              <div className="bg-primary/15 p-1.5 rounded-xl">
                 <Wand2 className="w-4 h-4 text-primary" />
               </div>
               <div>
-                <h1 className="font-semibold text-foreground text-sm leading-tight">
+                <h1 className="font-bold text-foreground text-sm leading-tight tracking-tight">
                   TextCraft
                 </h1>
                 <p className="text-[10px] text-muted-foreground hidden sm:block leading-tight">
@@ -306,59 +329,59 @@ export default function Home() {
             </div>
           </div>
 
-          <div className="flex items-center gap-1">
+          {/* Right actions */}
+          <div className="flex items-center gap-2">
             {(isDone || isError) && (
-              <Button
-                variant="ghost"
-                size="sm"
+              <button
                 onClick={handleNewText}
-                className="h-8 gap-1.5 text-xs text-muted-foreground hover:text-foreground hidden sm:flex"
+                className={cn(
+                  "hidden sm:flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium",
+                  "border border-border bg-muted/40 text-muted-foreground",
+                  "hover:bg-muted hover:text-foreground transition-all duration-150 active:scale-95"
+                )}
               >
                 <PenLine className="w-3.5 h-3.5" />
                 Nuevo texto
-              </Button>
+              </button>
             )}
-            <Button
-              variant="ghost"
-              size="icon"
+            <button
               onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
-              className="rounded-full text-muted-foreground hover:text-foreground h-8 w-8"
-              title={theme === "dark" ? "Modo claro" : "Modo oscuro"}
-            >
-              {theme === "dark" ? (
-                <Sun className="w-4 h-4" />
-              ) : (
-                <Moon className="w-4 h-4" />
+              aria-label={theme === "dark" ? "Activar modo claro" : "Activar modo oscuro"}
+              className={cn(
+                "flex items-center justify-center w-9 h-9 rounded-xl border border-border",
+                "bg-transparent hover:bg-muted text-muted-foreground hover:text-foreground",
+                "transition-all duration-150 active:scale-95"
               )}
-            </Button>
+            >
+              {theme === "dark" ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
+            </button>
           </div>
         </header>
 
         {/* Workspace */}
         <main className="flex-1 overflow-y-auto">
-          <div className="max-w-3xl mx-auto px-4 md:px-6 py-8 md:py-12 space-y-8 md:space-y-10">
+          <div className="max-w-2xl mx-auto px-4 md:px-6 py-8 md:py-12 space-y-8">
 
             {/* Hero */}
-            <div className="animate-in fade-in slide-in-from-bottom-4 duration-500">
-              <h2 className="text-2xl md:text-3xl font-bold text-foreground tracking-tight">
-                Mejora tu texto con IA
+            <div className="animate-in fade-in slide-in-from-bottom-3 duration-500">
+              <h2 className="text-2xl md:text-3xl font-bold text-foreground tracking-tight leading-tight">
+                Mejora tu texto<br className="hidden sm:block" /> con inteligencia artificial
               </h2>
-              <p className="text-sm md:text-base text-muted-foreground mt-2 leading-relaxed">
-                Pega tu texto, elige un modo y obtén una versión mejorada en segundos.
+              <p className="text-sm md:text-base text-muted-foreground mt-2.5 leading-relaxed">
+                Pega tu texto, elige un modo y obtén una versión mejorada al instante.
               </p>
             </div>
 
-            {/* Input card */}
-            <section className="space-y-2 animate-in fade-in slide-in-from-bottom-4 duration-500 delay-75">
+            {/* Input section */}
+            <section className="space-y-2.5 animate-in fade-in slide-in-from-bottom-3 duration-500 delay-75">
               <div className="flex items-center justify-between">
-                <label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+                <label className="text-[11px] font-semibold uppercase tracking-widest text-muted-foreground">
                   Texto de entrada
                 </label>
                 {inputText && (
                   <button
                     onClick={handleNewText}
-                    className="flex items-center gap-1 text-xs text-muted-foreground hover:text-destructive transition-colors"
-                    title="Limpiar texto"
+                    className="flex items-center gap-1 text-xs text-muted-foreground hover:text-destructive transition-colors duration-150"
                   >
                     <Trash2 className="w-3 h-3" />
                     Limpiar
@@ -368,10 +391,10 @@ export default function Home() {
 
               <div
                 className={cn(
-                  "rounded-2xl border transition-all duration-200 overflow-hidden",
+                  "rounded-2xl border overflow-hidden transition-all duration-200",
                   appState === "writing"
-                    ? "border-primary/60 shadow-[0_0_0_3px_hsl(var(--primary)/0.12)]"
-                    : "border-border shadow-sm hover:border-border/80",
+                    ? "border-primary/50 shadow-[0_0_0_3px_hsl(var(--primary)/0.1)]"
+                    : "border-border shadow-sm",
                   isProcessing && "opacity-60 pointer-events-none"
                 )}
               >
@@ -380,32 +403,34 @@ export default function Home() {
                   value={inputText}
                   onChange={handleInputChange}
                   placeholder="Pega o escribe tu texto aquí..."
-                  className="min-h-[200px] md:min-h-[220px] resize-y text-sm md:text-base leading-relaxed p-4 md:p-5 border-0 focus-visible:ring-0 bg-card rounded-2xl"
+                  className="min-h-[200px] md:min-h-[220px] resize-y text-sm leading-relaxed p-5 border-0 shadow-none focus-visible:ring-0 bg-card rounded-t-2xl rounded-b-none"
                   data-testid="input-text"
                 />
-                {inputText && (
-                  <div className="px-5 py-2 border-t border-border/50 bg-muted/30 flex items-center justify-between">
-                    <span className="text-[11px] text-muted-foreground">
-                      {wordCount(inputText)} palabras · {inputText.length} caracteres
-                    </span>
-                    <span
-                      className={cn(
-                        "text-[11px] font-medium transition-colors",
-                        appState === "writing"
-                          ? "text-primary"
-                          : "text-muted-foreground"
-                      )}
-                    >
-                      {appState === "writing" ? "Escribiendo..." : "Listo para procesar"}
-                    </span>
-                  </div>
-                )}
+                <div className="px-5 py-2.5 border-t border-border/50 bg-muted/20 flex items-center justify-between">
+                  <span className="text-[11px] text-muted-foreground tabular-nums">
+                    {inputText
+                      ? `${wordCount(inputText)} palabras · ${inputText.length} caracteres`
+                      : "0 palabras"}
+                  </span>
+                  <span
+                    className={cn(
+                      "text-[11px] font-medium transition-colors duration-200",
+                      appState === "writing" ? "text-primary" : "text-muted-foreground/60"
+                    )}
+                  >
+                    {appState === "writing"
+                      ? "Escribiendo..."
+                      : inputText
+                      ? "Listo para procesar"
+                      : ""}
+                  </span>
+                </div>
               </div>
             </section>
 
-            {/* Mode selection */}
-            <section className="space-y-3 animate-in fade-in slide-in-from-bottom-4 duration-500 delay-100">
-              <label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+            {/* Mode + action */}
+            <section className="space-y-4 animate-in fade-in slide-in-from-bottom-3 duration-500 delay-100">
+              <label className="text-[11px] font-semibold uppercase tracking-widest text-muted-foreground">
                 Modo de mejora
               </label>
 
@@ -417,16 +442,17 @@ export default function Home() {
                     disabled={isProcessing}
                     data-testid={`button-mode-${m.value}`}
                     className={cn(
-                      "flex items-center gap-3 px-4 py-3.5 rounded-xl border text-left transition-all duration-200",
-                      "hover:shadow-md active:scale-[0.98] disabled:pointer-events-none disabled:opacity-50",
+                      "flex items-center gap-3 px-4 py-4 rounded-2xl border text-left",
+                      "transition-all duration-200 active:scale-[0.98]",
+                      "disabled:pointer-events-none disabled:opacity-50",
                       mode === m.value
-                        ? "border-primary bg-primary/10 shadow-sm ring-1 ring-primary/30"
-                        : "border-border bg-card text-muted-foreground hover:text-foreground hover:bg-muted/40"
+                        ? "border-primary/60 bg-primary/8 shadow-sm ring-1 ring-primary/20"
+                        : "border-border bg-card hover:bg-muted/40 hover:border-border/80"
                     )}
                   >
                     <span
                       className={cn(
-                        "flex-shrink-0 p-2 rounded-lg transition-all duration-200",
+                        "flex-shrink-0 p-2 rounded-xl transition-all duration-200",
                         mode === m.value
                           ? "bg-primary text-primary-foreground shadow-sm"
                           : "bg-muted text-muted-foreground"
@@ -435,51 +461,69 @@ export default function Home() {
                       {m.icon}
                     </span>
                     <div className="min-w-0 flex-1">
-                      <div className="text-sm font-semibold leading-tight text-foreground">
+                      <p className="text-sm font-semibold text-foreground leading-tight">
                         {m.label}
-                      </div>
-                      <div className="text-xs text-muted-foreground leading-snug mt-0.5">
+                      </p>
+                      <p className="text-xs text-muted-foreground leading-snug mt-0.5">
                         {m.description}
-                      </div>
+                      </p>
                     </div>
-                    {mode === m.value && (
-                      <Check className="w-4 h-4 text-primary flex-shrink-0" />
-                    )}
+                    <span
+                      className={cn(
+                        "w-4 h-4 flex-shrink-0 rounded-full border-2 transition-all duration-200 flex items-center justify-center",
+                        mode === m.value
+                          ? "border-primary bg-primary"
+                          : "border-muted-foreground/30"
+                      )}
+                    >
+                      {mode === m.value && (
+                        <Check className="w-2.5 h-2.5 text-primary-foreground" />
+                      )}
+                    </span>
                   </button>
                 ))}
               </div>
 
-              {/* Action buttons */}
-              <div className="flex flex-col sm:flex-row gap-2.5 mt-1">
-                <Button
+              {/* Action row */}
+              <div className="flex flex-col sm:flex-row gap-2.5">
+                <button
                   onClick={handleProcess}
                   disabled={isProcessing || !inputText.trim()}
-                  className="flex-1 h-12 text-sm font-semibold shadow-sm"
                   data-testid="button-process"
+                  className={cn(
+                    "flex-1 flex items-center justify-center gap-2.5 h-12 px-6 rounded-2xl",
+                    "text-sm font-semibold transition-all duration-200 active:scale-[0.98]",
+                    "bg-primary text-primary-foreground shadow-md hover:opacity-90",
+                    "disabled:opacity-50 disabled:pointer-events-none disabled:shadow-none"
+                  )}
                 >
                   {isProcessing ? (
-                    <span className="flex items-center gap-2">
+                    <>
                       <ProcessingDots />
-                      Procesando tu texto...
-                    </span>
+                      <span>Procesando...</span>
+                    </>
                   ) : (
-                    <span className="flex items-center gap-2">
-                      Procesar texto
+                    <>
+                      <span>Procesar texto</span>
                       <ArrowRight className="w-4 h-4" />
-                    </span>
+                    </>
                   )}
-                </Button>
+                </button>
 
                 {(isDone || isError) && (
-                  <Button
-                    variant="outline"
+                  <button
                     onClick={handleNewText}
-                    className="sm:w-auto h-12 gap-2 text-sm sm:flex-none"
                     data-testid="button-new-text"
+                    className={cn(
+                      "flex items-center justify-center gap-2 h-12 px-5 rounded-2xl",
+                      "text-sm font-medium border border-border bg-card",
+                      "hover:bg-muted transition-all duration-150 active:scale-[0.98]",
+                      "text-muted-foreground hover:text-foreground"
+                    )}
                   >
                     <PenLine className="w-4 h-4" />
                     Nuevo texto
-                  </Button>
+                  </button>
                 )}
               </div>
             </section>
@@ -487,22 +531,23 @@ export default function Home() {
             {/* Output section */}
             {showOutput && (
               <section
-                className="space-y-3 animate-in fade-in slide-in-from-bottom-6 duration-500"
+                className="space-y-3 animate-in fade-in slide-in-from-bottom-5 duration-500"
                 data-testid="output-section"
               >
+                {/* Output header */}
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2.5">
-                    <label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+                    <label className="text-[11px] font-semibold uppercase tracking-widest text-muted-foreground">
                       Resultado
                     </label>
                     {appState === "streaming" && (
-                      <span className="flex items-center gap-1.5 text-xs text-primary font-medium">
+                      <span className="flex items-center gap-1.5 text-xs text-primary font-medium animate-in fade-in">
                         <span className="w-1.5 h-1.5 rounded-full bg-primary animate-pulse" />
                         Generando...
                       </span>
                     )}
                     {isDone && (
-                      <span className="flex items-center gap-1 text-[11px] text-green-600 dark:text-green-400 font-medium animate-in fade-in">
+                      <span className="flex items-center gap-1 text-[11px] text-green-600 dark:text-green-400 font-semibold animate-in fade-in">
                         <Check className="w-3 h-3" />
                         Listo
                       </span>
@@ -510,16 +555,16 @@ export default function Home() {
                   </div>
 
                   {outputText && isDone && (
-                    <Button
-                      variant="outline"
-                      size="sm"
+                    <button
                       onClick={copyToClipboard}
-                      className={cn(
-                        "h-8 gap-1.5 text-xs transition-all duration-300",
-                        isCopied &&
-                          "border-green-500/50 text-green-600 dark:text-green-400 bg-green-500/10"
-                      )}
                       data-testid="button-copy"
+                      className={cn(
+                        "flex items-center gap-1.5 h-8 px-3 rounded-xl border text-xs font-medium",
+                        "transition-all duration-200 active:scale-95",
+                        isCopied
+                          ? "border-green-500/40 bg-green-500/10 text-green-600 dark:text-green-400"
+                          : "border-border bg-card text-muted-foreground hover:text-foreground hover:bg-muted"
+                      )}
                     >
                       {isCopied ? (
                         <>
@@ -532,19 +577,19 @@ export default function Home() {
                           Copiar resultado
                         </>
                       )}
-                    </Button>
+                    </button>
                   )}
                 </div>
 
-                {/* Error */}
+                {/* Error state */}
                 {isError && errorText && (
-                  <div className="flex items-start gap-3 p-4 rounded-xl border border-destructive/40 bg-destructive/8 animate-in fade-in">
+                  <div className="flex items-start gap-3 p-4 rounded-2xl border border-destructive/30 bg-destructive/8 animate-in fade-in">
                     <AlertCircle className="w-4 h-4 flex-shrink-0 mt-0.5 text-destructive dark:text-red-400" />
                     <div className="flex-1 min-w-0">
-                      <p className="text-sm text-destructive dark:text-red-400 font-medium mb-1">
+                      <p className="text-sm font-semibold text-destructive dark:text-red-400 mb-0.5">
                         Error al procesar
                       </p>
-                      <p className="text-xs text-destructive/80 dark:text-red-400/80">
+                      <p className="text-xs text-destructive/75 dark:text-red-400/75">
                         {errorText}
                       </p>
                     </div>
@@ -558,39 +603,34 @@ export default function Home() {
                   </div>
                 )}
 
-                {/* Processing skeleton */}
+                {/* Skeleton loader */}
                 {appState === "processing" && (
-                  <div className="rounded-2xl border border-border bg-card p-5 md:p-6 min-h-[160px] flex flex-col justify-center gap-3">
-                    <div className="space-y-2.5">
-                      {[85, 72, 90, 60, 78].map((w, i) => (
-                        <div
-                          key={i}
-                          className="h-3.5 bg-muted animate-pulse rounded-full"
-                          style={{
-                            width: `${w}%`,
-                            animationDelay: `${i * 100}ms`,
-                          }}
-                        />
-                      ))}
-                    </div>
-                    <p className="text-xs text-muted-foreground mt-2 flex items-center gap-1.5">
-                      <span className="inline-block w-1.5 h-1.5 rounded-full bg-primary animate-bounce" />
+                  <div className="rounded-2xl border border-border bg-card p-6 min-h-[160px] space-y-3">
+                    {[88, 73, 91, 65, 80].map((w, i) => (
+                      <div
+                        key={i}
+                        className="h-3.5 bg-muted animate-pulse rounded-full"
+                        style={{ width: `${w}%`, animationDelay: `${i * 80}ms` }}
+                      />
+                    ))}
+                    <p className="flex items-center gap-2 text-xs text-muted-foreground pt-1">
+                      <span className="w-1.5 h-1.5 rounded-full bg-primary animate-bounce" />
                       La IA está analizando tu texto...
                     </p>
                   </div>
                 )}
 
-                {/* Result text */}
+                {/* Streaming + done text */}
                 {(appState === "streaming" || isDone) && outputText && (
                   <div
                     ref={outputRef}
                     className={cn(
-                      "rounded-2xl border bg-card overflow-hidden shadow-sm",
+                      "rounded-2xl border bg-card overflow-hidden shadow-sm transition-all duration-300",
                       isDone ? "border-border" : "border-primary/30"
                     )}
                   >
                     <div
-                      className="p-5 md:p-6 text-sm md:text-base leading-relaxed text-foreground whitespace-pre-wrap max-h-[480px] overflow-y-auto"
+                      className="p-5 md:p-6 text-sm leading-relaxed text-foreground whitespace-pre-wrap max-h-[480px] overflow-y-auto"
                       data-testid="output-text"
                     >
                       {outputText}
@@ -600,12 +640,19 @@ export default function Home() {
                     </div>
 
                     {isDone && (
-                      <div className="px-5 py-2.5 border-t border-border/50 bg-muted/30 flex items-center justify-between">
-                        <span className="text-[11px] text-muted-foreground">
+                      <div className="px-5 py-3 border-t border-border/50 bg-muted/20 flex items-center justify-between">
+                        <span className="text-[11px] text-muted-foreground tabular-nums">
                           {wordCount(outputText)} palabras · {outputText.length} caracteres
                         </span>
-                        {wordCount(inputText) > 0 && wordCount(outputText) > 0 && (
-                          <span className="text-[11px] text-muted-foreground">
+                        {wordCount(inputText) > 0 && (
+                          <span
+                            className={cn(
+                              "text-[11px] font-medium tabular-nums",
+                              wordCount(outputText) < wordCount(inputText)
+                                ? "text-amber-600 dark:text-amber-400"
+                                : "text-green-600 dark:text-green-400"
+                            )}
+                          >
                             {wordCount(outputText) < wordCount(inputText)
                               ? `−${wordCount(inputText) - wordCount(outputText)} palabras`
                               : `+${wordCount(outputText) - wordCount(inputText)} palabras`}
@@ -617,6 +664,7 @@ export default function Home() {
                 )}
               </section>
             )}
+
           </div>
         </main>
       </div>
@@ -626,7 +674,7 @@ export default function Home() {
 
 function ProcessingDots() {
   return (
-    <span className="flex items-center gap-0.5">
+    <span className="flex items-center gap-1">
       {[0, 1, 2].map((i) => (
         <span
           key={i}
