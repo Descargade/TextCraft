@@ -1,0 +1,73 @@
+Quiero que mejores el proyecto que ya has creado. No lo rehagas desde cero, sino que lo optimices, corrijas y lo lleves a un nivel profesional tipo SaaS moderno.
+
+🎯 OBJETIVO GENERAL
+
+La aplicación actual funciona como una herramienta de mejora de textos con IA, pero quiero que la conviertas en un producto mucho más profesional, visualmente atractivo, completamente responsive y en español.
+
+🌍 1. IDIOMA (OBLIGATORIO)
+Toda la interfaz debe estar 100% en español
+Incluyendo:
+botones
+placeholders
+mensajes de carga
+errores
+resultados
+📱 2. RESPONSIVE (CRÍTICO)
+
+Mejora completamente la adaptación a dispositivos:
+
+Mobile-first obligatorio
+En móviles:
+botones apilados verticalmente
+textarea ocupa todo el ancho
+En desktop:
+layout centrado tipo SaaS (max-width)
+botones en fila ordenada
+Espaciado más limpio y profesional
+Evitar elementos pegados o comprimidos
+🎨 3. MEJORA VISUAL (MUY IMPORTANTE)
+
+Quiero un diseño más atractivo y moderno:
+
+Estilo SaaS profesional (tipo Notion / ChatGPT / Grammarly)
+Mejor jerarquía visual
+Más espacio en blanco (aire visual)
+Bordes redondeados consistentes
+Sombras suaves y modernas
+Mejor tipografía (más clara y elegante)
+Hover effects suaves en botones
+Animaciones sutiles (fade, transitions)
+🧩 4. UX (EXPERIENCIA DE USUARIO)
+
+Mejorar la interacción:
+
+Loader más moderno y visible
+Feedback visual al procesar texto
+Botón de copiar con confirmación clara
+Transición suave al mostrar resultados
+Estados bien definidos:
+loading
+error
+success
+⚙️ 5. CÓDIGO (REFINAMIENTO)
+Mantener Next.js + TypeScript + Tailwind
+Refactorizar componentes si es necesario
+Eliminar código duplicado o innecesario
+Mejorar estructura si está desordenada
+Asegurar compatibilidad total con Vercel
+🤖 6. IA (SI APLICA)
+Asegúrate de que la integración con OpenAI esté bien estructurada
+Manejo correcto de errores de API
+Función reutilizable limpia en /lib
+🚀 7. OBJETIVO FINAL
+
+La app debe sentirse como un producto real listo para vender:
+
+profesional
+limpia
+moderna
+rápida
+agradable de usar
+🔥 IMPORTANTE
+
+No quiero una reescritura total, quiero una mejora del proyecto existente, optimizando diseño, UX, responsive y calidad general del código.
