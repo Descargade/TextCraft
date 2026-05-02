@@ -7,3 +7,6 @@
  */
 
 export * from "./healthStatus";
+export * from "./improveError";
+export * from "./improveTextBody";
+export * from "./improveTextBodyMode";

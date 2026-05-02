@@ -14,3 +14,13 @@ import * as zod from "zod";
 export const HealthCheckResponse = zod.object({
   status: zod.string(),
 });
+
+/**
+ * @summary Improve text using AI (SSE stream)
+ */
+export const ImproveTextBody = zod.object({
+  text: zod.string().describe("The text to be improved"),
+  mode: zod
+    .enum(["professional", "summarize", "simplify"])
+    .describe("The improvement mode to apply"),
+});

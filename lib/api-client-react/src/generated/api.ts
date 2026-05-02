@@ -5,18 +5,25 @@
  * API specification
  * OpenAPI spec version: 0.1.0
  */
-import { useQuery } from "@tanstack/react-query";
+import { useMutation, useQuery } from "@tanstack/react-query";
 import type {
+  MutationFunction,
   QueryFunction,
   QueryKey,
+  UseMutationOptions,
+  UseMutationResult,
   UseQueryOptions,
   UseQueryResult,
 } from "@tanstack/react-query";
 
-import type { HealthStatus } from "./api.schemas";
+import type {
+  HealthStatus,
+  ImproveError,
+  ImproveTextBody,
+} from "./api.schemas";
 
 import { customFetch } from "../custom-fetch";
-import type { ErrorType } from "../custom-fetch";
+import type { ErrorType, BodyType } from "../custom-fetch";
 
 type AwaitedInput<T> = PromiseLike<T> | T;
 
@@ -99,3 +106,89 @@ export function useHealthCheck<
 
   return { ...query, queryKey: queryOptions.queryKey };
 }
+
+/**
+ * @summary Improve text using AI (SSE stream)
+ */
+export const getImproveTextUrl = () => {
+  return `/api/improve`;
+};
+
+export const improveText = async (
+  improveTextBody: ImproveTextBody,
+  options?: RequestInit,
+): Promise<unknown> => {
+  return customFetch<unknown>(getImproveTextUrl(), {
+    ...options,
+    method: "POST",
+    headers: { "Content-Type": "application/json", ...options?.headers },
+    body: JSON.stringify(improveTextBody),
+  });
+};
+
+export const getImproveTextMutationOptions = <
+  TError = ErrorType<ImproveError>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof improveText>>,
+    TError,
+    { data: BodyType<ImproveTextBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof improveText>>,
+  TError,
+  { data: BodyType<ImproveTextBody> },
+  TContext
+> => {
+  const mutationKey = ["improveText"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof improveText>>,
+    { data: BodyType<ImproveTextBody> }
+  > = (props) => {
+    const { data } = props ?? {};
+
+    return improveText(data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type ImproveTextMutationResult = NonNullable<
+  Awaited<ReturnType<typeof improveText>>
+>;
+export type ImproveTextMutationBody = BodyType<ImproveTextBody>;
+export type ImproveTextMutationError = ErrorType<ImproveError>;
+
+/**
+ * @summary Improve text using AI (SSE stream)
+ */
+export const useImproveText = <
+  TError = ErrorType<ImproveError>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof improveText>>,
+    TError,
+    { data: BodyType<ImproveTextBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof improveText>>,
+  TError,
+  { data: BodyType<ImproveTextBody> },
+  TContext
+> => {
+  return useMutation(getImproveTextMutationOptions(options));
+};

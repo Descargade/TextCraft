@@ -8,3 +8,26 @@
 export interface HealthStatus {
   status: string;
 }
+
+/**
+ * The improvement mode to apply
+ */
+export type ImproveTextBodyMode =
+  (typeof ImproveTextBodyMode)[keyof typeof ImproveTextBodyMode];
+
+export const ImproveTextBodyMode = {
+  professional: "professional",
+  summarize: "summarize",
+  simplify: "simplify",
+} as const;
+
+export interface ImproveTextBody {
+  /** The text to be improved */
+  text: string;
+  /** The improvement mode to apply */
+  mode: ImproveTextBodyMode;
+}
+
+export interface ImproveError {
+  error: string;
+}

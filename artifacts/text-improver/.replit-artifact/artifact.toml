@@ -1,0 +1,31 @@
+kind = "web"
+previewPath = "/"
+title = "AI Text Improver"
+version = "1.0.0"
+id = "artifacts/text-improver"
+router = "path"
+
+[[integratedSkills]]
+name = "react-vite"
+version = "1.0.0"
+
+[[services]]
+name = "web"
+paths = [ "/" ]
+localPort = 18876
+
+[services.development]
+run = "pnpm --filter @workspace/text-improver run dev"
+
+[services.production]
+build = [ "pnpm", "--filter", "@workspace/text-improver", "run", "build" ]
+publicDir = "artifacts/text-improver/dist/public"
+serve = "static"
+
+[[services.production.rewrites]]
+from = "/*"
+to = "/index.html"
+
+[services.env]
+PORT = "18876"
+BASE_PATH = "/"

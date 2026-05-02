@@ -1,0 +1,55 @@
+Quiero que crees una aplicación web completa, moderna y lista para producción que funcione como una herramienta de mejora de textos basada en IA.
+
+🎯 Objetivo de la app
+
+La app debe permitir al usuario pegar un texto y recibir una versión mejorada en tres modos:
+
+✍️ “Mejorar profesionalmente” (tono formal y corporativo)
+🧠 “Resumir” (versión más corta manteniendo ideas clave)
+🗣️ “Simplificar” (hacer el texto más claro y fácil de entender)
+🧱 Requisitos técnicos (IMPORTANTE)
+Usar Next.js (App Router)
+Usar TypeScript
+Usar TailwindCSS
+Todo debe funcionar en un solo proyecto listo para desplegar en Vercel
+NO usar backend externo
+Usar API Routes internas de Next.js (/app/api/...)
+La app debe poder desplegarse en Vercel sin configuración adicional
+🤖 Inteligencia Artificial
+Usar la API de OpenAI (o simular la estructura si no hay clave aún)
+Crear una función reutilizable para procesar texto
+Manejar errores correctamente (loading, error states)
+🖥️ UI/UX
+Diseño minimalista, estilo moderno tipo SaaS
+Un textarea grande para pegar texto
+3 botones claros para elegir modo:
+Mejorar profesionalmente
+Resumir
+Simplificar
+Un botón principal: “Procesar texto”
+Mostrar resultado en un panel separado
+Indicador de carga mientras se procesa
+Botón para copiar resultado
+⚙️ Estructura del proyecto
+/app/page.tsx → interfaz principal
+/app/api/improve/route.ts → endpoint de procesamiento
+/lib/openai.ts → función para llamar a la IA
+Componentes reutilizables si es necesario
+🚀 Deploy
+
+El proyecto debe estar listo para:
+
+Subir directamente a GitHub
+Conectarlo a Vercel sin configuración extra
+Funcionar con variables de entorno para API key
+📌 Extras (si puedes)
+Modo oscuro
+Historial de textos procesados (en memoria local del navegador)
+Animaciones suaves al mostrar resultados
+🎯 Importante
+
+Quiero un código limpio, bien estructurado y escalable. No quiero prototipos rápidos, sino una base sólida para un SaaS.
+
+💡 Después de esto
+
+Quiero que el proyecto sea lo más simple posible de desplegar en Vercel.
