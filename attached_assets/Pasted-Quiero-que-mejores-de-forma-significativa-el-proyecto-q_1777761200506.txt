@@ -1,0 +1,89 @@
+Quiero que mejores de forma significativa el proyecto que ya has creado. No es una reescritura completa, es una optimización profunda del producto, enfocada en UX, interacción dinámica con el DOM y diseño tipo SaaS profesional.
+
+🎯 OBJETIVO PRINCIPAL
+
+Convertir esta aplicación en una herramienta de mejora de textos con IA que se sienta como un producto real (tipo SaaS premium), con una experiencia altamente interactiva, fluida y moderna.
+
+🌍 1. IDIOMA (OBLIGATORIO)
+Toda la aplicación debe estar en español neutro
+Incluye:
+botones
+labels
+mensajes de error
+loading
+resultados
+tooltips o ayudas
+⚡ 2. INTERACCIÓN CON EL DOM (MUY IMPORTANTE)
+
+Quiero una aplicación mucho más dinámica e interactiva:
+
+Debe incluir:
+Posibilidad de crear un nuevo texto desde cero sin recargar la página
+Botón claro: “Nuevo texto” que:
+limpia el textarea
+reinicia estado de resultado
+hace foco automático en el input
+Actualización del DOM en tiempo real:
+el resultado debe aparecer dinámicamente sin recargar ni bloquear UI
+transiciones suaves al mostrar resultados
+Estados visuales claros:
+escribiendo
+procesando
+resultado listo
+Interacciones fluidas (sin cortes bruscos)
+📱 3. RESPONSIVE (OBLIGATORIO)
+
+Optimización total mobile-first:
+
+Mobile:
+layout vertical limpio
+botones apilados
+textarea full width
+Desktop:
+diseño centrado tipo SaaS (max-width)
+distribución más profesional
+Todo debe verse perfecto en cualquier pantalla
+🎨 4. DISEÑO VISUAL (SUBIR NIVEL)
+
+Quiero una mejora visual fuerte:
+
+Estilo SaaS premium moderno (tipo ChatGPT + Notion + Grammarly)
+Mejor jerarquía visual
+Más aire (espaciado amplio y elegante)
+Tarjetas modernas con sombras suaves
+Bordes redondeados consistentes
+Animaciones sutiles:
+fade-in en resultados
+hover en botones
+transición al copiar texto
+🧩 5. UX (EXPERIENCIA DE USUARIO)
+
+Mejorar la sensación de producto real:
+
+Loader moderno y elegante (no básico)
+Botón “Copiar resultado” con feedback visual:
+“Texto copiado ✔”
+Botón “Nuevo texto” visible y útil
+Evitar bloqueos de interfaz
+Respuesta rápida y fluida
+⚙️ 6. CÓDIGO Y ESTRUCTURA
+Mantener Next.js + TypeScript + Tailwind
+Refactorizar si es necesario para mejorar claridad
+Separar lógica de UI y API si está mezclado
+Código limpio, escalable y mantenible
+🤖 7. IA (SI APLICA)
+Mantener integración con OpenAI bien estructurada
+Manejo correcto de errores
+Respuestas consistentes en español
+🚀 8. OBJETIVO FINAL
+
+La app debe sentirse como un producto SaaS real:
+
+muy interactiva
+fluida
+moderna
+visualmente atractiva
+con sensación de “app viva”, no estática
+🔥 EXIGENCIA FINAL
+
+No quiero cambios superficiales. Quiero una mejora profunda en UX, interacción del DOM y diseño, elevando el proyecto a nivel profesional.
